@@ -16,6 +16,6 @@ class OtpVerificationRepositoryImpl implements OtpVerificationRepository {
       verificationId: verificationId,
       smsCode: smsCode,
     );
-    return model; // Implicit upcast to OtpVerificationEntity
+    return model;
   }
 }

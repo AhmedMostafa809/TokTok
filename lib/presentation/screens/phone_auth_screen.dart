@@ -50,8 +50,8 @@ class PhoneAuthScreen extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => BlocProvider(
                   create: (context) => OtpVerificationBloc(
-                    verificationId: state.verificationId, // From phone auth
-                    verifyOtpUseCase: Get.find<VerifyOtpUseCase>(), // From DI
+                    verificationId: state.verificationId,
+                    verifyOtpUseCase: Get.find<VerifyOtpUseCase>(),
                   ),
                   child: OtpScreen(verificationId: state.verificationId),
                 ),
