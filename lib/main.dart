@@ -14,6 +14,7 @@ import 'package:toktokapp/domain/repositories/phone_auth_repository.dart';
 import 'package:toktokapp/domain/usecases%20/otp_verification_usecase.dart';
 import 'package:toktokapp/domain/usecases%20/send_otp_usecase.dart';
 import 'package:toktokapp/presentation/bloc/auth_bloc/auth_bloc.dart';
+import 'package:toktokapp/presentation/bloc/map_bloc.dart';
 import 'package:toktokapp/presentation/bloc/otp_bloc/otp_bloc.dart';
 import 'package:toktokapp/presentation/screens/map_screen.dart';
 import 'package:toktokapp/presentation/screens/phone_auth_screen.dart';
@@ -24,6 +25,7 @@ import 'package:toktokapp/translations/app_translation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  initDependencies();
   runApp(MyApp());
 }
 
@@ -44,6 +46,9 @@ class MyApp extends StatelessWidget {
               BlocProvider(
                 create: (context) => Get.find<OtpVerificationBloc>(),
               ),
+              BlocProvider(
+                create: (context) => Get.find<MapBloc>(),
+              ),
             ],
             child: GetMaterialApp(
               debugShowCheckedModeBanner: false,
@@ -56,7 +61,7 @@ class MyApp extends StatelessWidget {
                       ? TextDirection.ltr
                       : TextDirection.ltr,
               translations: AppTranslations(),
-              home: SplashScreen(),
+              home: MapScreen(),
             ),
           ),
         );
@@ -89,4 +94,6 @@ void initDependencies() {
   );
 
   Get.lazyPut(() => VerifyOtpUseCase(Get.find<OtpVerificationRepository>()));
+
+  Get.lazyPut(() => MapBloc());
 }

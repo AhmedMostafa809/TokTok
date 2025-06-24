@@ -1,195 +1,190 @@
-//
-// import 'dart:async';
-//
-// import 'package:flutter/cupertino.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-// import 'package:google_maps_flutter/google_maps_flutter.dart';
-//
-// class MapScreen extends StatefulWidget {
-//   @override
-//   _MapScreenState createState() => _MapScreenState();
-// }
-//
-// class _MapScreenState extends State<MapScreen> {
-//
-//   final Completer<GoogleMapController> _mapController = Completer();
-//   BitmapDescriptor? sourceIcon;
-//   BitmapDescriptor? driverIcon;
-//   final PolylinePoints polylinePoints = PolylinePoints();
-//
-//   List<LatLng> polylineCoordinates = [];
-//   void getPolyPoints() async {
-//     try {
-//       PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-//         request: PolylineRequest(origin:PointLatLng(30.0228051, 31.4037249)
-//             , destination: PointLatLng(30.0163959, 31.4012811),
-//             mode:  TravelMode.driving,optimizeWaypoints: true),
-//         googleApiKey: "AIzaSyDVRGP-WivRuIlNAiVrbped6wn5vWUMrVk",
-//       );
-//       if (result.points.isNotEmpty) {
-//         setState(() {
-//         });
-//         polylineCoordinates = result.points
-//             .map((PointLatLng point) => LatLng(point.latitude, point.longitude))
-//             .toList();
-//
-//       }
-//     } catch (e) {
-//       print(e);
-//
-//     }
-//
-//
-//   }
-//
-//
-//   void setMarkers()  {
-//     BitmapDescriptor.asset(
-//       ImageConfiguration(size: Size(30, 40) ),
-//       "assets/current_location.png",
-//     ).then((icon) {
-//       setState(() {
-//         sourceIcon = icon;
-//       });
-//     });
-//     BitmapDescriptor.asset(
-//       ImageConfiguration(size: Size(60, 40) ),
-//       "assets/toktok.png",
-//     ).then((icon) {
-//       setState(() {
-//         driverIcon = icon;
-//       });
-//     });
-//   }
-//   @override
-//   void initState() {
-//     setMarkers();
-//     getPolyPoints();
-//     super.initState();
-//   }
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: GoogleMap(
-//         mapType: MapType.terrain,
-//         myLocationButtonEnabled: true,
-//         myLocationEnabled: true,
-//         compassEnabled: true,
-//         initialCameraPosition: CameraPosition(
-//           target: LatLng(30.0228051, 31.4037249),
-//           zoom: 14,
-//         ),
-//         onMapCreated: (GoogleMapController controller) {
-//           _mapController.complete(controller);
-//         },
-//         polylines: {
-//           Polyline(
-//             polylineId: PolylineId('route'),
-//             points: polylineCoordinates,
-//             color: Colors.blue,
-//             width: 3,
-//           ),
-//         },
-//         markers: {
-//           Marker(
-//             markerId: MarkerId('1'),
-//             position: LatLng(30.0228051, 31.4037249),
-//             icon: sourceIcon!,
-//           ),
-//           Marker(
-//             markerId: MarkerId('1'),
-//             position: LatLng(30.0163959, 31.4012811),
-//             icon: driverIcon!,
-//           )
-//         },
-//       ),
-//     );
-//   }
-// }
-
-
-
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:toktokapp/presentation/bloc/map_bloc.dart';
+import 'package:toktokapp/presentation/screens/arrival_screen.dart';
+
 
 class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
   @override
-  _FreeMapScreenState createState() => _FreeMapScreenState();
+  State<MapScreen> createState() => MapScreenState();
 }
 
-class _FreeMapScreenState extends State<MapScreen> {
-  final LatLng sourceLocation = LatLng(30.0228051, 31.4037249);
-  final LatLng destinationLocation = LatLng(30.0163959, 31.4012811);
-  List<LatLng> routePoints = [];
+class MapScreenState extends State<MapScreen> {
+  late final MapController mapController;
+  bool isMapReady = false;
 
   @override
   void initState() {
     super.initState();
-    getRoute();
+    mapController = MapController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => isMapReady = true);
+        context.read<MapBloc>().add(MapInitialized());
+      }
+    });
   }
 
-  Future<void> getRoute() async {
-    final url =
-        'http://router.project-osrm.org/route/v1/driving/${sourceLocation.longitude},${sourceLocation.latitude};${destinationLocation.longitude},${destinationLocation.latitude}?overview=full&geometries=geojson';
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      final coordinates = decoded['routes'][0]['geometry']['coordinates'];
-      List<LatLng> points = coordinates
-          .map<LatLng>((point) => LatLng(point[1], point[0]))
-          .toList();
-
-      setState(() {
-        routePoints = points;
-      });
-    } else {
-      print('Failed to fetch route');
-    }
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: sourceLocation,
-          initialZoom: 15.0,
+      body: BlocListener<MapBloc, MapState>(
+        listener: (context, state) {
+          if (isMapReady && state is MapLoaded) {
+            mapController.move(state.sourceLocation, state.zoomLevel);
+          }
+          // if (state is MapLoaded && state.showArrivalButton) {
+          // }
+        },
+        child: BlocBuilder<MapBloc, MapState>(
+          builder: (context, state) {
+            if (!isMapReady || state is MapInitial) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is MapLoaded) {
+              return Stack(
+                children: [
+                  FlutterMap(
+                    mapController: mapController,
+                    options: MapOptions(
+                      initialCenter: state.sourceLocation,
+                      initialZoom: state.zoomLevel,
+                      // onTap: (_, __) => context.read<MapBloc>().add(MapTapped()),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+                        subdomains: const ['a', 'b', 'c'],
+                      ),
+                      if (state.routePoints != null)
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: state.routePoints!,
+                              color: Colors.black,
+                              strokeWidth: 5.0,
+                            ),
+                          ],
+                        ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            width: 50,
+                            height: 50,
+                            point: state.sourceLocation,
+                            child: Image.asset("assets/current_location.png"),
+                          ),
+                          ...state.destinations.map((destination) => Marker(
+                            width: 50,
+                            height: 50,
+                            point: destination,
+                            child: GestureDetector(
+                              onTap: () => context.read<MapBloc>().add(MarkerTapped(destination)),
+                              child: Image.asset(
+                                "assets/toktok.png",
+                              ),
+                            ),
+                          )),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (state.timerSeconds != null)
+                    Positioned(
+                      top: 50,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(155),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'TokTok arriving in: ${state.timerSeconds}s',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (state.showArrivalButton)
+                    Positioned(
+                      bottom: 100,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                          ),
+                          onPressed: () {
+                            context.read<MapBloc>().add(NavigateToDestination());
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ArrivalScreen(
+                                  destination: state.selectedDestination!,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'On My Way',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    right: 16,
+                    bottom: 100,
+                    child: Column(
+                      children: [
+                        FloatingActionButton(
+                          heroTag: 'zoomIn',
+                          mini: true,
+                          onPressed: () => context.read<MapBloc>().add(ZoomIn()),
+                          child: const Icon(Icons.add),
+                        ),
+                        const SizedBox(height: 8),
+                        FloatingActionButton(
+                          heroTag: 'zoomOut',
+                          mini: true,
+                          onPressed: () => context.read<MapBloc>().add(ZoomOut()),
+                          child: const Icon(Icons.remove),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+            return const SizedBox();
+          },
         ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c'],),
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: routePoints,
-                color: Colors.blue,
-                strokeWidth: 4.0,
-              ),
-            ],
-          ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                width: 50,
-                height: 50,
-                point: sourceLocation,
-                child:  Image.asset("assets/current_location.png",),
-              ),
-              Marker(
-                width: 50,
-                height: 50,
-                point: destinationLocation,
-                child:  Image.asset( "assets/toktok.png", ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
 }
+
+
