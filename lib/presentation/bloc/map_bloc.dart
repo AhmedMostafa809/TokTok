@@ -27,11 +27,11 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     on<NavigateToDestination>(onNavigateToDestination);
   }
 
-  @override
-  Future<void> close() {
-    timer?.cancel();
-    return super.close();
-  }
+  // @override
+  // Future<void> close() {
+  //   timer?.cancel();
+  //   return super.close();
+  // }
 
   void onMapInitialized(MapInitialized event, Emitter<MapState> emit) {
     emit(MapLoaded(
@@ -41,7 +41,6 @@ class MapBloc extends Bloc<MapEvent, MapState> {
   }
 
   Future<void> onMarkerTapped(MarkerTapped event, Emitter<MapState> emit) async {
-    // if (state is! MapLoaded) return;
     final currentState = state as MapLoaded;
     try {
       final url = 'http://router.project-osrm.org/route/v1/driving/'
@@ -67,7 +66,6 @@ class MapBloc extends Bloc<MapEvent, MapState> {
   }
 
   void onStartDriverTimer(StartDriverTimer event, Emitter<MapState> emit) {
-    // if (state is! MapLoaded) return;
     final currentState = state as MapLoaded;
     timer?.cancel();
     int secondsRemaining = 10;

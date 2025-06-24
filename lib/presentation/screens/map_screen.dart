@@ -58,7 +58,6 @@ class MapScreenState extends State<MapScreen> {
                     options: MapOptions(
                       initialCenter: state.sourceLocation,
                       initialZoom: state.zoomLevel,
-                      // onTap: (_, __) => context.read<MapBloc>().add(MapTapped()),
                     ),
                     children: [
                       TileLayer(
