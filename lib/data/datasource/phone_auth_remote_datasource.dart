@@ -45,7 +45,7 @@ class PhoneAuthRemoteDataSourceImpl implements PhoneAuthRemoteDataSource {
     );
 
     return completer.future.timeout(
-      const Duration(seconds: 20),
+      const Duration(seconds: 5),
       onTimeout: () => PhoneAuthModel(error: 'Timeout'),
     );
   }

@@ -1,12 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 import 'package:lottie/lottie.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toktokapp/presentation/bloc/auth_bloc/auth_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class PhoneAuthForm extends StatelessWidget {
   final _phoneController = TextEditingController();
@@ -31,7 +30,7 @@ class PhoneAuthForm extends StatelessWidget {
             SizedBox(height: 10.h),
             IntlPhoneField(
               decoration: InputDecoration(
-                labelText: 'phone_number'.tr,
+                labelText: 'phone_number'.tr(),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(),
@@ -40,7 +39,7 @@ class PhoneAuthForm extends StatelessWidget {
               initialCountryCode: 'EG',
               controller: _phoneController,
               validator: _validatePhoneNumber,
-              invalidNumberMessage: "invalid_phone".tr,
+              invalidNumberMessage: "invalid_phone".tr(),
             ),
             SizedBox(height: 20),
             BlocBuilder<PhoneAuthBloc, PhoneAuthState>(
@@ -52,7 +51,7 @@ class PhoneAuthForm extends StatelessWidget {
                       : () => _onSendOtpPressed(context),
                   child: state is PhoneAuthLoading
                       ? const CircularProgressIndicator()
-                      : Text('send_otp'.tr),
+                      : Text('send_otp'.tr()),
                 );
               },
             ),
@@ -64,11 +63,11 @@ class PhoneAuthForm extends StatelessWidget {
 
   String? _validatePhoneNumber(PhoneNumber? phoneNumber) {
     if (phoneNumber == null || phoneNumber.number.isEmpty) {
-      return 'invalid_phone'.tr;
+      return 'invalid_phone'.tr();
     }
     final fullNumber = phoneNumber.completeNumber;
     if (!RegExp(r'^\+\d{1,3}\d{9,10}$').hasMatch(fullNumber)) {
-      return 'invalid_phone_format'.tr;
+      return 'invalid_phone_format'.tr();
     }
     return null;
   }

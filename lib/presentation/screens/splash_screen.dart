@@ -11,7 +11,7 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    initDependencies();
+    // initDependencies();
     return AnimatedSplashScreen(
       splash: Center(
         child: Lottie.asset(

@@ -10,6 +10,11 @@ import 'package:toktokapp/presentation/bloc/otp_bloc/otp_bloc.dart';
 import 'package:toktokapp/presentation/screens/otp_screen.dart';
 import 'package:toktokapp/presentation/widgets/custom_text_form.dart';
 import 'package:toktokapp/controllers/theme_controller.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:toktokapp/presentation/bloc/localization_bloc/localization_bloc.dart';
+import 'package:toktokapp/presentation/bloc/localization_bloc/localization_event.dart';
+import 'package:toktokapp/presentation/bloc/localization_bloc/localization_state.dart';
 
 class PhoneAuthScreen extends StatelessWidget {
   const PhoneAuthScreen({super.key});
@@ -22,20 +27,30 @@ class PhoneAuthScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Obx(() => Text(
-              Get.find<LanguageController>().isEnglish ? 'ع' : 'EN',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            )),
-            onPressed: () => Get.find<LanguageController>().toggleLanguage(),
+          BlocBuilder<LanguageBloc, LanguageState>(
+            builder: (context, state) {
+              return IconButton(
+                icon: Text(
+                  state.locale.languageCode == 'en' ? 'ع' : 'EN',
+                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  final newLocale = state.locale.languageCode == 'en'
+                      ? const Locale('ar')
+                      : const Locale('en');
+                  context.setLocale(newLocale);
+                  context.read<LanguageBloc>().add(ToggleLanguageEvent());
+                },
+              );
+            },
           ),
-          Spacer(),
-          IconButton(
-            icon: Obx(() => Icon(Get.find<ThemeController>().isDarkMode.value
-                ? Icons.light_mode
-                : Icons.dark_mode)),
-            onPressed: () => Get.find<ThemeController>().toggleTheme(),
-          ),
+          // Spacer(),
+          // IconButton(
+          //   icon: Obx(() => Icon(Get.find<ThemeController>().isDarkMode.value
+          //       ? Icons.light_mode
+          //       : Icons.dark_mode)),
+          //   onPressed: () => Get.find<ThemeController>().toggleTheme(),
+          // ),
         ],
       ),
       body: BlocListener<PhoneAuthBloc, PhoneAuthState>(
@@ -45,15 +60,15 @@ class PhoneAuthScreen extends StatelessWidget {
               SnackBar(content: Text(state.error)),
             );
           } else if (state is PhoneAuthSuccess) {
+            final otpVerificationBloc = context.read<OtpVerificationBloc>();
+
+            otpVerificationBloc.add(VerifyOtpEvent(verificationId: state.verificationId,smsCode: ""));
+
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => BlocProvider(
-                  create: (context) => OtpVerificationBloc(
-                    verificationId: state.verificationId,
-                    verifyOtpUseCase: Get.find<VerifyOtpUseCase>(),
-                  ),
-                  child: OtpScreen(verificationId: state.verificationId),
+                builder: (context) => OtpScreen(
+                  verificationId: state.verificationId,
                 ),
               ),
             );
